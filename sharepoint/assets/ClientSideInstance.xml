@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Elements xmlns="http://schemas.microsoft.com/sharepoint/">
+    <ClientSideComponentInstance
+        Title="ExternalFieldUpdater"
+        Location="ClientSideExtension.ListViewCommandSet.CommandBar"
+        ListTemplateId="101"
+        Properties="{&quot;AlertTextOne&quot;:&quot;External Sync Item Updated&quot;}"
+        ComponentId="869fe62b-54bf-49a3-9827-6aa0c9f27562" />
+</Elements>

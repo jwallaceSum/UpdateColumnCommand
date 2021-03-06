@@ -1,0 +1,19 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
+  "version": "2.0",
+  "bundles": {
+    "external-field-updater-command-set": {
+      "components": [
+        {
+          "entrypoint": "./lib/extensions/externalFieldUpdater/ExternalFieldUpdaterCommandSet.js",
+          "manifest": "./src/extensions/externalFieldUpdater/ExternalFieldUpdaterCommandSet.manifest.json"
+        }
+      ]
+    }
+  },
+  "externals": {},
+  "localizedResources": {
+    "ExternalFieldUpdaterCommandSetStrings": "lib/extensions/externalFieldUpdater/loc/{locale}.js",
+    "PropertyControlStrings": "node_modules/@pnp/spfx-property-controls/lib/loc/{locale}.js"
+  }
+}
