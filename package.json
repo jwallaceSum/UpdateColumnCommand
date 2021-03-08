@@ -1,6 +1,6 @@
 {
   "name": "command-extension",
-  "version": "0.0.1",
+  "version": "0.0.5",
   "private": true,
   "main": "lib/index.js",
   "engines": {
@@ -36,6 +36,8 @@
     "@types/mocha": "2.2.38",
     "@types/webpack-env": "1.13.1",
     "ajv": "~5.2.2",
-    "gulp": "~3.9.1"
+    "gulp": "~3.9.1",
+    "gulp-typescript": "^4.2.1-rc",
+    "typescript": "^4.2.1-rc"
   }
 }

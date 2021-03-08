@@ -4,7 +4,8 @@ import {
   BaseListViewCommandSet,
   Command,
   IListViewCommandSetListViewUpdatedParameters,
-  IListViewCommandSetExecuteEventParameters
+  IListViewCommandSetExecuteEventParameters,
+  RowAccessor
 } from '@microsoft/sp-listview-extensibility';
 import { Dialog } from '@microsoft/sp-dialog';
 import * as strings from 'ExternalFieldUpdaterCommandSetStrings';
@@ -32,11 +33,10 @@ export interface IExternalFieldUpdaterCommandSetProperties {
   sampleTextTwo: string;
 }
 
-export interface ListItem {
+ interface ListItem {
   // This is an example; replace with your own properties
-  ExternalSite: string;
+  ExternalSite: boolean;
   ID: string;
-
 }
 
 const LOG_SOURCE: string = 'ExternalFieldUpdaterCommandSet';
@@ -44,9 +44,6 @@ const LOG_SOURCE: string = 'ExternalFieldUpdaterCommandSet';
 
 export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandSet<IExternalFieldUpdaterCommandSetProperties> {
   private isInOwnersGroup: boolean = false;
-  private list = sp.web.lists.getByTitle('Documents');
-  private stat: boolean = true;
-
   @override
   public async onInit(): Promise<void> {
 
@@ -60,9 +57,35 @@ export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandS
 
   @override
   public onListViewUpdated(event: IListViewCommandSetListViewUpdatedParameters): void {
-    this.stat = this.isInOwnersGroup && (event.selectedRows.length >= 1);
-    this.tryGetCommand('COMMAND_1').visible = this.stat;
+    this.tryGetCommand('COMMAND_1').visible = this.isInOwnersGroup && (event.selectedRows.length >= 1);
   }
+
+
+  private async updateListItems(Rows: ReadonlyArray<RowAccessor>) {
+    // Update list item here
+    let list = sp.web.lists.getByTitle("Documents");
+    list.fields.getByTitle('External Site').update({
+      readOnlyField: false
+    });
+
+    const entityTypeFullName = await list.getListItemEntityTypeFullName();
+    let batch = sp.web.createBatch();
+    for(let item of Rows){
+      let itemID =  item.getValueByName('ID');
+      let newValue;
+      (item.getValueByName('ExternalSite') == 'No') ? newValue = true : newValue = false;
+      // note requirement of "*" eTag param - or use a specific eTag value as needed
+      list.items.getById(itemID).inBatch(batch).update({ ExternalSite: newValue }, "*", entityTypeFullName).then(b => {
+        console.log(b);
+      });
+    }
+    await batch.execute();
+    list.fields.getByTitle('External Site').update({
+      readOnlyField: true
+    });
+    console.log("Done");
+  }
+
 
   @override
   public onExecute(event: IListViewCommandSetExecuteEventParameters): void {
@@ -70,23 +93,8 @@ export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandS
     // console.log('ROW:', event.selectedRows[0].getValueByName('ExternalSite'));
     switch (event.itemId) {
       case 'COMMAND_1':
-        this.list.fields.getByTitle('External Site').update({
-          ReadOnlyField: false
-        });
-        for(let item of event.selectedRows) {
-          console.log('Value', item.getValueByName('ExternalSite'));
-          (item.getValueByName('ExternalSite') == 'No') ? newValue = true: newValue = false;
-          console.log('New Value', newValue);
-          this.list.items.getById(item.getValueByName('ID')).update({
-              ExternalSite: newValue
-          });
-          console.log('Value:', this.list.items.getById(item.getValueByName('ID')).fieldValuesAsHTML());
-        }
-        this.list.fields.getByTitle('External Site').update({
-          ReadOnlyField: true
-        });
-        console.log("Read:", (this.list.fields.getByTitle('External Site')));
-        Dialog.alert(`External Sync Enabled`);
+        this.updateListItems(event.selectedRows);
+        Dialog.alert(`External Sync Updated`);
         break;
       default:
         throw new Error('Unknown command');
