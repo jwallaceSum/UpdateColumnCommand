@@ -1,7 +1,7 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
   "solution": {
-    "name": "command-extension-client-side-solution",
+    "name": "Bikesportz-External-Sync",
     "id": "1fd30096-d534-42ef-af12-d2d16d7a1628",
     "version": "1.1.0.6",
     "includeClientSideAssets": true,
