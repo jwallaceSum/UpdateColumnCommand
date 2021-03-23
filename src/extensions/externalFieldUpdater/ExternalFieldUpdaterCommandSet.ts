@@ -14,11 +14,14 @@ import "@pnp/sp/webs";
 import "@pnp/sp/site-users/web";
 import "@pnp/sp/lists";
 import "@pnp/sp/items";
+import "@pnp/sp/folders";
+import "@pnp/sp/files/folder";
 import "@pnp/sp/site-users/web";
 import { AadHttpClient, HttpClientResponse } from '@microsoft/sp-http';
 import { ISiteUserProps } from "@pnp/sp/site-users/";
 import "@pnp/sp/fields";
 import { List } from '@pnp/sp/lists';
+import { Batch } from '@pnp/odata';
 
 
 
@@ -60,6 +63,25 @@ export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandS
     this.tryGetCommand('COMMAND_1').visible = this.isInOwnersGroup && (event.selectedRows.length >= 1);
   }
 
+  private async addFile(batch: Batch, itemID: any, list: any, entityTypeFullName: any){
+    let item = list.items.getById(itemID)
+    let newValue;
+    if(item.getValueByName('FSObjType') == 1){
+      newValue = null;
+      let relativePath = item.getValueByName('folderRelativeUrl');
+      let files = await sp.web.getFolderByServerRelativePath(relativePath).files();
+      for(let file of files){
+        this.addFile(batch, file.ListId , list, entityTypeFullName);
+      }
+    }
+    else{
+      (item.getValueByName('ExternalSite') == 'No') ? newValue = true : newValue = false;
+      item.inBatch(batch).update({ ExternalSite: newValue }, "*", entityTypeFullName).then(b => {
+        console.log(b);
+      });
+    }
+    return batch;
+  }
 
   private async updateListItems(Rows: ReadonlyArray<RowAccessor>) {
     // Update list item here
@@ -67,24 +89,20 @@ export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandS
     list.fields.getByTitle('External Site').update({
       readOnlyField: false
     });
-
     const entityTypeFullName = await list.getListItemEntityTypeFullName();
     let batch = sp.web.createBatch();
     for(let item of Rows){
       let itemID =  item.getValueByName('ID');
-      let newValue;
-      (item.getValueByName('ExternalSite') == 'No') ? newValue = true : newValue = false;
-      // note requirement of "*" eTag param - or use a specific eTag value as needed
-      list.items.getById(itemID).inBatch(batch).update({ ExternalSite: newValue }, "*", entityTypeFullName).then(b => {
-        console.log(b);
-      });
-    }
+      this.addFile(batch, itemID, list, entityTypeFullName);
+
     await batch.execute();
     list.fields.getByTitle('External Site').update({
       readOnlyField: true
     });
     console.log("Done");
+    }
   }
+
 
 
   @override
@@ -95,6 +113,7 @@ export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandS
       case 'COMMAND_1':
         this.updateListItems(event.selectedRows);
         Dialog.alert(`External Sync Updated`);
+        location.reload();
         break;
       default:
         throw new Error('Unknown command');
