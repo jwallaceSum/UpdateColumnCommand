@@ -7,18 +7,21 @@ import {
   IListViewCommandSetExecuteEventParameters,
   RowAccessor
 } from '@microsoft/sp-listview-extensibility';
-import { Dialog } from '@microsoft/sp-dialog';
+import { BaseDialog, Dialog } from '@microsoft/sp-dialog';
 import * as strings from 'ExternalFieldUpdaterCommandSetStrings';
 import { sp } from "@pnp/sp";
 import "@pnp/sp/webs";
 import "@pnp/sp/site-users/web";
 import "@pnp/sp/lists";
 import "@pnp/sp/items";
+import "@pnp/sp/folders";
+import "@pnp/sp/files/folder";
 import "@pnp/sp/site-users/web";
 import { AadHttpClient, HttpClientResponse } from '@microsoft/sp-http';
 import { ISiteUserProps } from "@pnp/sp/site-users/";
 import "@pnp/sp/fields";
 import { List } from '@pnp/sp/lists';
+import { Batch } from '@pnp/odata';
 
 
 
@@ -60,32 +63,46 @@ export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandS
     this.tryGetCommand('COMMAND_1').visible = this.isInOwnersGroup && (event.selectedRows.length >= 1);
   }
 
-
-  private async updateListItems(Rows: ReadonlyArray<RowAccessor>) {
-    // Update list item here
-    let list = sp.web.lists.getByTitle("Documents");
-    list.fields.getByTitle('External Site').update({
-      readOnlyField: false
-    });
-
+  private async updateFile(itemID: any, list: any){
     const entityTypeFullName = await list.getListItemEntityTypeFullName();
+    let fileType = await list.items.getById(itemID).select('FileSystemObjectType').get().FileSystemObjectType;
+    let currentValue = list.items.getById(itemID).select('ExternalSite').get().ExternalSite;
+    let newValue;
     let batch = sp.web.createBatch();
-    for(let item of Rows){
-      let itemID =  item.getValueByName('ID');
-      let newValue;
-      (item.getValueByName('ExternalSite') == 'No') ? newValue = true : newValue = false;
-      // note requirement of "*" eTag param - or use a specific eTag value as needed
+    console.log(fileType);
+    if(fileType == 1){
+      newValue = null;
+      let files = await sp.web.getFolderById(itemID).files();
+      for(let file of files){
+        console.log(file);
+        this.updateFile(file.ListId , list);
+      }
+    }
+    else{
+      (currentValue == 'No') ? newValue = true : newValue = false;
+      console.log(newValue);
       list.items.getById(itemID).inBatch(batch).update({ ExternalSite: newValue }, "*", entityTypeFullName).then(b => {
         console.log(b);
       });
     }
     await batch.execute();
+  }
+
+  private updateListItems(Rows: ReadonlyArray<RowAccessor>) {
+    // Update list item here
+    let list = sp.web.lists.getByTitle("Documents");
     list.fields.getByTitle('External Site').update({
-      readOnlyField: true
+      ReadOnlyField: false
+    });
+    for(let item of Rows){
+      let itemID =  item.getValueByName('ID');
+      this.updateFile(itemID, list);
+    }
+    list.fields.getByTitle('External Site').update({
+      ReadOnlyField: true
     });
     console.log("Done");
   }
-
 
   @override
   public onExecute(event: IListViewCommandSetExecuteEventParameters): void {
@@ -94,10 +111,11 @@ export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandS
     switch (event.itemId) {
       case 'COMMAND_1':
         this.updateListItems(event.selectedRows);
-        Dialog.alert(`External Sync Updated`);
+        Dialog.alert(`External Sync Updated`); //.then(() => {location.reload()});
         break;
       default:
         throw new Error('Unknown command');
     }
+
   }
 }
