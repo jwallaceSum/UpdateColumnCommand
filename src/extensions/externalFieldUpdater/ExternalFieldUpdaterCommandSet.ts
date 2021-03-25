@@ -22,10 +22,7 @@ import { ISiteUserProps } from "@pnp/sp/site-users/";
 import "@pnp/sp/fields";
 import { List } from '@pnp/sp/lists';
 import { Batch } from '@pnp/odata';
-<<<<<<< HEAD
 import { JSONParser } from "@pnp/odata";
-=======
->>>>>>> 1d8ac18df09c439d5eabb2939eccc9dd2ed33289
 
 
 
@@ -107,7 +104,6 @@ export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandS
       ReadOnlyField: true
     });
     console.log("Done");
-    }
   }
 
   @override
