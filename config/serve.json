@@ -4,7 +4,7 @@
   "https": true,
   "serveConfigurations": {
     "default": {
-      "pageUrl": "https://summertechnology.sharepoint.com/sites/SummerTechAll/Shared%20Documents/Forms/AllItems.aspx",
+      "pageUrl": "https://summertechnology.sharepoint.com/sites/Test-copy/Shared%20Documents/Forms/AllItems.aspx",
       "customActions": {
         "869fe62b-54bf-49a3-9827-6aa0c9f27562": {
           "location": "ClientSideExtension.ListViewCommandSet.CommandBar",
@@ -15,7 +15,7 @@
       }
     },
     "externalFieldUpdater": {
-      "pageUrl": "https://summertechnology.sharepoint.com/sites/SummerTechAll/Shared%20Documents/Forms/AllItems.aspx",
+      "pageUrl": "https://summertechnology.sharepoint.com/sites/Test-copy/Shared%20Documents/Forms/AllItems.aspx",
       "customActions": {
         "869fe62b-54bf-49a3-9827-6aa0c9f27562": {
           "location": "ClientSideExtension.ListViewCommandSet.CommandBar",
