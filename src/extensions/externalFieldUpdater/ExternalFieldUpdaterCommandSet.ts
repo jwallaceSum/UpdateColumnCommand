@@ -71,7 +71,7 @@ export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandS
     let currentValue = list.items.getById(itemID).select('ExternalSite').get(parser);
     let newValue;
     let batch = sp.web.createBatch();
-    console.log(fileType).FileSystemObjectType;
+    console.log(fileType.FileSystemObjectType);
     if(fileType == 1){
       newValue = null;
       let files = await sp.web.getFolderById(itemID).files();
