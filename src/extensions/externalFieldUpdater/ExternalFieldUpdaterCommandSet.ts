@@ -22,6 +22,7 @@ import { ISiteUserProps } from "@pnp/sp/site-users/";
 import "@pnp/sp/fields";
 import { List } from '@pnp/sp/lists';
 import { Batch } from '@pnp/odata';
+import { JSONParser } from "@pnp/odata";
 
 
 
@@ -65,11 +66,12 @@ export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandS
 
   private async updateFile(itemID: any, list: any){
     const entityTypeFullName = await list.getListItemEntityTypeFullName();
-    let fileType = await list.items.getById(itemID).select('FileSystemObjectType').get().FileSystemObjectType;
-    let currentValue = list.items.getById(itemID).select('ExternalSite').get().ExternalSite;
+    const parser = new JSONParser();
+    let fileType = await list.items.getById(itemID).select('FileSystemObjectType').get(parser);
+    let currentValue = list.items.getById(itemID).select('ExternalSite').get(parser);
     let newValue;
     let batch = sp.web.createBatch();
-    console.log(fileType);
+    console.log(fileType).FileSystemObjectType;
     if(fileType == 1){
       newValue = null;
       let files = await sp.web.getFolderById(itemID).files();
@@ -103,9 +105,6 @@ export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandS
     });
     console.log("Done");
   }
-
-
-
 
   @override
   public onExecute(event: IListViewCommandSetExecuteEventParameters): void {
