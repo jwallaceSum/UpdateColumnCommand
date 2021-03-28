@@ -23,6 +23,7 @@ import "@pnp/sp/fields";
 import { List } from '@pnp/sp/lists';
 import { Batch } from '@pnp/odata';
 import { JSONParser } from "@pnp/odata";
+import { IFile } from '@pnp/sp/files/types';
 
 
 
@@ -67,18 +68,24 @@ export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandS
   private async updateFile(itemID: any, list: any){
     const entityTypeFullName = await list.getListItemEntityTypeFullName();
     const parser = new JSONParser();
-    let fileType = await list.items.getById(itemID).select('FileSystemObjectType').get(parser);
-    let currentValue = list.items.getById(itemID).select('ExternalSite').get(parser);
-    let newValue;
+    let fileType = await list.items.getById(itemID).get(parser);
+    let currentValue = await list.items.getById(itemID).select('ExternalSite').get(parser);
+    currentValue = currentValue.ExternalSite;
+    let newValue= null;
     let batch = sp.web.createBatch();
-    console.log(fileType.FileSystemObjectType);
-    if(fileType == 1){
-      newValue = null;
-      let files = await sp.web.getFolderById(itemID).files();
-      for(let file of files){
-        console.log(file);
-        this.updateFile(file.ListId , list);
-      }
+    if(fileType.FileSystemObjectType == 1){
+      console.log('Folder: ');
+      console.log(fileType);
+      let files = await fileType.rootFolder.folders();
+      console.log(files);
+      // files.forEach(i => {
+      //   console.log('File:' + i);
+      //   let id = list.items.getByName(i.Name).get(parser);
+      //   console.log(i.Name);
+      //   console.log(id.ID);
+      //   // this.updateFile(i.ListId, list);
+
+      // });
     }
     else{
       (currentValue == 'No') ? newValue = true : newValue = false;
