@@ -9,12 +9,13 @@ import {
 } from '@microsoft/sp-listview-extensibility';
 import { BaseDialog, Dialog } from '@microsoft/sp-dialog';
 import * as strings from 'ExternalFieldUpdaterCommandSetStrings';
-import { sp } from "@pnp/sp";
+import { sp, SPBatch } from "@pnp/sp";
 import "@pnp/sp/webs";
 import "@pnp/sp/site-users/web";
 import "@pnp/sp/lists";
 import "@pnp/sp/items";
 import "@pnp/sp/folders";
+import "@pnp/sp/files";
 import "@pnp/sp/files/folder";
 import "@pnp/sp/site-users/web";
 import { AadHttpClient, HttpClientResponse } from '@microsoft/sp-http';
@@ -65,51 +66,67 @@ export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandS
     this.tryGetCommand('COMMAND_1').visible = this.isInOwnersGroup && (event.selectedRows.length >= 1);
   }
 
-  private async updateFile(itemID: any, list: any){
+  private async updateFile(itemID: any, list: any, batch: SPBatch){
     const entityTypeFullName = await list.getListItemEntityTypeFullName();
     const parser = new JSONParser();
     let fileType = await list.items.getById(itemID).get(parser);
     let currentValue = await list.items.getById(itemID).select('ExternalSite').get(parser);
     currentValue = currentValue.ExternalSite;
     let newValue= null;
-    let batch = sp.web.createBatch();
     if(fileType.FileSystemObjectType == 1){
       console.log('Folder: ');
       console.log(fileType);
-      let files = await fileType.rootFolder.folders();
+      let files = await list.items.getById(itemID).folder.files();
+      let folders = await list.items.getById(itemID).folder.folders();
       console.log(files);
-      // files.forEach(i => {
-      //   console.log('File:' + i);
-      //   let id = list.items.getByName(i.Name).get(parser);
-      //   console.log(i.Name);
-      //   console.log(id.ID);
-      //   // this.updateFile(i.ListId, list);
-
-      // });
+      console.log(folders);
+      for(let i in files) {
+        console.log('File:');
+        console.log(files[i]);
+        let url = files[i].ServerRelativeUrl;
+        console.log(url);
+        let file = await sp.web.getFileByServerRelativeUrl(url).getItem();
+        let id = file['Id'];
+        console.log('List Id:'+ id);
+        batch = await this.updateFile(id, list, batch);
+      }
+      for(let i in folders) {
+        console.log('Folder:');
+        console.log(folders[i]);
+        let url = folders[i].ServerRelativeUrl;
+        console.log(url);
+        let folder = await sp.web.getFolderByServerRelativeUrl(url).getItem();
+        console.log(folder);
+        let id = folder['Id'];
+        console.log('List Id:'+ id);
+        batch = await this.updateFile(id, list, batch);
+      }
     }
     else{
-      (currentValue == 'No') ? newValue = true : newValue = false;
+      (currentValue == false) ? newValue = true : newValue = false;
       console.log(newValue);
       list.items.getById(itemID).inBatch(batch).update({ ExternalSite: newValue }, "*", entityTypeFullName).then(b => {
         console.log(b);
       });
     }
-    await batch.execute();
+    return batch;
   }
 
-  private updateListItems(Rows: ReadonlyArray<RowAccessor>) {
+  private async updateListItems(Rows: ReadonlyArray<RowAccessor>) {
     // Update list item here
     let list = sp.web.lists.getByTitle("Documents");
+    let batch = sp.web.createBatch();
     list.fields.getByTitle('External Site').update({
       ReadOnlyField: false
     });
     for(let item of Rows){
       let itemID =  item.getValueByName('ID');
-      this.updateFile(itemID, list);
+      batch = await this.updateFile(itemID, list, batch);
     }
     list.fields.getByTitle('External Site').update({
       ReadOnlyField: true
     });
+    await batch.execute();
     console.log("Done");
   }
 
