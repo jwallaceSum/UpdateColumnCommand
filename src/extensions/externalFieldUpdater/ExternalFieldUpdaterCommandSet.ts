@@ -66,7 +66,7 @@ export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandS
     this.tryGetCommand('COMMAND_1').visible = this.isInOwnersGroup && (event.selectedRows.length >= 1);
   }
 
-  private async updateFile(itemID: any, list: any, batch: SPBatch){
+  private async updateFile(itemID: any, list: any){
     const entityTypeFullName = await list.getListItemEntityTypeFullName();
     const parser = new JSONParser();
     let fileType = await list.items.getById(itemID).get(parser);
@@ -88,7 +88,7 @@ export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandS
         let file = await sp.web.getFileByServerRelativeUrl(url).getItem();
         let id = file['Id'];
         console.log('List Id:'+ id);
-        batch = await this.updateFile(id, list, batch);
+        await this.updateFile(id, list);
       }
       for(let i in folders) {
         console.log('Folder:');
@@ -99,34 +99,31 @@ export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandS
         console.log(folder);
         let id = folder['Id'];
         console.log('List Id:'+ id);
-        batch = await this.updateFile(id, list, batch);
+        await this.updateFile(id, list);
       }
     }
     else{
       (currentValue == false) ? newValue = true : newValue = false;
       console.log(newValue);
-      list.items.getById(itemID).inBatch(batch).update({ ExternalSite: newValue }, "*", entityTypeFullName).then(b => {
+      list.items.getById(itemID).update({ ExternalSite: newValue }, "*", entityTypeFullName).then(b => {
         console.log(b);
       });
     }
-    return batch;
   }
 
   private async updateListItems(Rows: ReadonlyArray<RowAccessor>) {
     // Update list item here
     let list = sp.web.lists.getByTitle("Documents");
-    let batch = sp.web.createBatch();
     list.fields.getByTitle('External Site').update({
       ReadOnlyField: false
     });
     for(let item of Rows){
       let itemID =  item.getValueByName('ID');
-      batch = await this.updateFile(itemID, list, batch);
+      this.updateFile(itemID, list);
     }
     list.fields.getByTitle('External Site').update({
       ReadOnlyField: true
     });
-    await batch.execute();
     console.log("Done");
   }
 
