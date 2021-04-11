@@ -3,7 +3,7 @@
   "solution": {
     "name": "Bikesportz-External-Sync",
     "id": "1fd30096-d534-42ef-af12-d2d16d7a1628",
-    "version": "1.1.1.0",
+    "version": "1.1.1.2",
     "includeClientSideAssets": true,
     "isDomainIsolated": false,
     "developer": {
@@ -18,7 +18,7 @@
         "title": "Application Extension - Deployment of custom action.",
         "description": "Deploys a custom action with ClientSideComponentId association",
         "id": "681d4ea6-7cca-40be-b474-98f3accbc68c",
-        "version": "1.1.1.0",
+        "version": "1.1.1.2",
         "assets": {
           "elementManifests": [
             "elements.xml",

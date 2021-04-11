@@ -25,7 +25,8 @@ import { List } from '@pnp/sp/lists';
 import { Batch } from '@pnp/odata';
 import { JSONParser } from "@pnp/odata";
 import { IFile } from '@pnp/sp/files/types';
-
+import OptionDialog from './OptionsDialog';
+import { IDropdownOption } from 'office-ui-fabric-react';
 
 
 /**
@@ -47,12 +48,11 @@ export interface IExternalFieldUpdaterCommandSetProperties {
 
 const LOG_SOURCE: string = 'ExternalFieldUpdaterCommandSet';
 
-
 export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandSet<IExternalFieldUpdaterCommandSetProperties> {
   private isInOwnersGroup: boolean = false;
+  private _selectedKey: IDropdownOption;
   @override
   public async onInit(): Promise<void> {
-
     await super.onInit();
     let user = await sp.web.currentUser();
     await sp.setup({ spfxContext: this.context });
@@ -74,37 +74,38 @@ export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandS
     currentValue = currentValue.ExternalSite;
     let newValue= null;
     if(fileType.FileSystemObjectType == 1){
-      console.log('Folder: ');
-      console.log(fileType);
+     // console.log('Folder: ');
+     // console.log(fileType);
       let files = await list.items.getById(itemID).folder.files();
       let folders = await list.items.getById(itemID).folder.folders();
-      console.log(files);
-      console.log(folders);
+      //console.log(files);
+      //console.log(folders);
       for(let i in files) {
-        console.log('File:');
-        console.log(files[i]);
+        //console.log('File:');
+        //console.log(files[i]);
         let url = files[i].ServerRelativeUrl;
-        console.log(url);
+        //console.log(url);
         let file = await sp.web.getFileByServerRelativeUrl(url).getItem();
         let id = file['Id'];
-        console.log('List Id:'+ id);
+        //console.log('List Id:'+ id);
         batch = await this.updateFile(id, list, batch);
       }
       for(let i in folders) {
-        console.log('Folder:');
-        console.log(folders[i]);
+        //console.log('Folder:');
+        //console.log(folders[i]);
         let url = folders[i].ServerRelativeUrl;
-        console.log(url);
+        // console.log(url);
         let folder = await sp.web.getFolderByServerRelativeUrl(url).getItem();
-        console.log(folder);
+        // console.log(folder);
         let id = folder['Id'];
         console.log('List Id:'+ id);
         batch = await this.updateFile(id, list, batch);
       }
     }
     else{
-      (currentValue == false) ? newValue = true : newValue = false;
-      console.log(newValue);
+      newValue =(this._selectedKey.key != 'No');
+      // console.log(this._selectedKey.key != 'No');
+      // console.log(newValue);
       list.items.getById(itemID).inBatch(batch).update({ ExternalSite: newValue }, "*", entityTypeFullName).then(b => {
         console.log(b);
       });
@@ -114,6 +115,10 @@ export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandS
 
   private async updateListItems(Rows: ReadonlyArray<RowAccessor>) {
     // Update list item here
+    if(this._selectedKey == undefined){
+      return;
+    }
+    console.log(this._selectedKey);
     let list = sp.web.lists.getByTitle("Documents");
     let batch = sp.web.createBatch();
     list.fields.getByTitle('External Site').update({
@@ -132,12 +137,15 @@ export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandS
 
   @override
   public onExecute(event: IListViewCommandSetExecuteEventParameters): void {
-    let newValue: boolean = false;
     // console.log('ROW:', event.selectedRows[0].getValueByName('ExternalSite'));
     switch (event.itemId) {
       case 'COMMAND_1':
-        this.updateListItems(event.selectedRows);
-        Dialog.alert(`External Sync Updated`); //.then(() => {location.reload()});
+        const diag:  OptionDialog = new OptionDialog();
+        diag.show().then(()=>{
+          this._selectedKey = diag.selectedKey;
+          this.updateListItems(event.selectedRows);
+        });
+
         break;
       default:
         throw new Error('Unknown command');
