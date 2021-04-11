@@ -5,7 +5,8 @@ import {
   Command,
   IListViewCommandSetListViewUpdatedParameters,
   IListViewCommandSetExecuteEventParameters,
-  RowAccessor
+  RowAccessor,
+  ListItemAccessor
 } from '@microsoft/sp-listview-extensibility';
 import { BaseDialog, Dialog } from '@microsoft/sp-dialog';
 import * as strings from 'ExternalFieldUpdaterCommandSetStrings';
@@ -70,9 +71,7 @@ export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandS
     const entityTypeFullName = await list.getListItemEntityTypeFullName();
     const parser = new JSONParser();
     let fileType = await list.items.getById(itemID).get(parser);
-    let currentValue = await list.items.getById(itemID).select('ExternalSite').get(parser);
-    currentValue = currentValue.ExternalSite;
-    let newValue= null;
+    let newValue =(this._selectedKey.key != 'No');
     if(fileType.FileSystemObjectType == 1){
      // console.log('Folder: ');
      // console.log(fileType);
@@ -87,8 +86,11 @@ export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandS
         //console.log(url);
         let file = await sp.web.getFileByServerRelativeUrl(url).getItem();
         let id = file['Id'];
-        //console.log('List Id:'+ id);
-        batch = await this.updateFile(id, list, batch);
+        console.log('List Id:'+ id);
+        // batch = await this.updateFile(id, list, batch);
+        list.items.getById(id).inBatch(batch).update({ ExternalSite: newValue }, "*", entityTypeFullName).then(b => {
+          console.log(b);
+        });
       }
       for(let i in folders) {
         //console.log('Folder:');
@@ -103,7 +105,6 @@ export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandS
       }
     }
     else{
-      newValue =(this._selectedKey.key != 'No');
       // console.log(this._selectedKey.key != 'No');
       // console.log(newValue);
       list.items.getById(itemID).inBatch(batch).update({ ExternalSite: newValue }, "*", entityTypeFullName).then(b => {
