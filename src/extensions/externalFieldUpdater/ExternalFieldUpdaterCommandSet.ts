@@ -55,9 +55,10 @@ export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandS
   @override
   public async onInit(): Promise<void> {
     await super.onInit();
-    let user = await sp.web.currentUser();
+    let groups = await sp.web.currentUser.groups.get();
     await sp.setup({ spfxContext: this.context });
-    this.isInOwnersGroup = user.IsSiteAdmin;
+    console.log((groups['Title'].indexOf('External Sharing') > -1));
+    this.isInOwnersGroup = await (groups['Title'].indexOf('External Sharing') > -1);
 
     return Promise.resolve<void>();
   }
