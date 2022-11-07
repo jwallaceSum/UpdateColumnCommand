@@ -121,6 +121,29 @@ export default class ExternalFieldUpdaterCommandSet extends BaseListViewCommandS
     let fileType = await list.items.getById(itemID).get(parser);
     let newValue =(this._selectedKey.key != 'No');
     if(fileType.FileSystemObjectType == 1){
+      let folders = await list.items.getById(itemID).folder.folders();
+      for(let i in folders) {
+        //console.log('Folder:');
+        //console.log(folders[i]);
+        let url = folders[i].ServerRelativeUrl;
+        // console.log(url);
+        let folder = await sp.web.getFolderByServerRelativeUrl(url).getItem();
+        // console.log(folder);
+        let id = folder['Id'];
+        console.log('List Id:'+ id);
+        // batch = await this.updateFile(id, list, batch);
+        list.items.getById(id).inBatch(batch).update({ ExternalSite: newValue }, "*", entityTypeFullName).then(b => {
+          console.log(b);
+        });
+        batch = await this.updateFolder(id, list, batch);
+      }
+    }
+    else{
+      // console.log(this._selectedKey.key != 'No');
+      // console.log(newValue);
+      list.items.getById(itemID).inBatch(batch).update({ ExternalSite: newValue }, "*", entityTypeFullName).then(b => {
+        console.log(b);
+      });
       // console.log(this._selectedKey.key != 'No');
       console.log('Folder');
       list.items.getById(itemID).inBatch(batch).update({ ExternalSite: newValue }, "*", entityTypeFullName).then(b => {
